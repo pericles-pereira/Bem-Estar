@@ -1,56 +1,47 @@
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 import {
   ViroARScene,
   ViroARSceneNavigator,
-  ViroText,
-  ViroTrackingReason,
-  ViroTrackingStateConstants,
-} from "@reactvision/react-viro";
-import React, { useState } from "react";
-import { StyleSheet } from "react-native";
+  Viro360Image,
+} from '@viro-community/react-viro';
 
+// Cena principal que vai conter nossa imagem 360
 const HelloWorldSceneAR = () => {
-  const [text, setText] = useState("Initializing AR...");
-
-  function onInitialized(state: any, reason: ViroTrackingReason) {
-    console.log("onInitialized", state, reason);
-    if (state === ViroTrackingStateConstants.TRACKING_NORMAL) {
-      setText("Hello World!");
-    } else if (state === ViroTrackingStateConstants.TRACKING_UNAVAILABLE) {
-      // Handle loss of tracking
-    }
-  }
-
   return (
-    <ViroARScene onTrackingUpdated={onInitialized}>
-      <ViroText
-        text={text}
-        scale={[0.5, 0.5, 0.5]}
-        position={[0, 0, -1]}
-        style={styles.helloWorldTextStyle}
+    <ViroARScene>
+      <Viro360Image
+        source={require('./assets/charolettenbrunn_park.jpg')} // Carrega a imagem local da pasta assets
+        rotation={[0, -90, 0]} // Ajusta a rotação inicial para olhar para frente
       />
     </ViroARScene>
   );
 };
 
-export default () => {
+// Componente principal do App*/
+const App = () => {
   return (
-    <ViroARSceneNavigator
-      autofocus={true}
-      initialScene={{
-        scene: HelloWorldSceneAR,
-      }}
-      style={styles.f1}
-    />
+    <View style={styles.container}>
+      
+      <ViroARSceneNavigator
+        autofocus={true}
+        initialScene={{
+          scene: HelloWorldSceneAR, // Define nossa cena como a cena inicial
+        }}
+        style={styles.viroView}
+      />
+    </View>
   );
 };
 
-var styles = StyleSheet.create({
-  f1: { flex: 1 },
-  helloWorldTextStyle: {
-    fontFamily: "Arial",
-    fontSize: 30,
-    color: "#ffffff",
-    textAlignVertical: "center",
-    textAlign: "center",
+// Estilos
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  viroView: {
+    flex: 1,
   },
 });
+
+export default App;

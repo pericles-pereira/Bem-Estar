@@ -10,7 +10,9 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native-community/cli-doctor": "^20.0.2",
     "@reactvision/react-viro": "^2.41.4",
+    "@viro-community/react-viro": "^2.41.1",
     "react": "18.2.0",
     "react-native": "0.73.3"
   },
