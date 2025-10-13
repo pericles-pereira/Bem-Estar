@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "98741688423",
+    "project_id": "tccunip-f2f7a",
+    "storage_bucket": "tccunip-f2f7a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:98741688423:android:c8e282ef4a1352d8949cc2",
+        "android_client_info": {
+          "package_name": "com.virostarterkit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "98741688423-a76au93esrl3hjeojjikqara6dri4e3v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDt0BY-YlB-lq3SkBN7fjQ8uUo0oLLomgs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "98741688423-a76au93esrl3hjeojjikqara6dri4e3v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
