@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
@@ -23,7 +24,8 @@ const Welcome: React.FC<WelcomeProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
-  const { login, register } = useContext(AuthContext);
+  const { login, register, googleLogin } = useContext(AuthContext);
+  const [isLoading, setIsLoading] = useState(false);
 
   // --- Login ---
   const handleLogin = async () => {
@@ -32,16 +34,14 @@ const Welcome: React.FC<WelcomeProps> = ({ onLoginSuccess }) => {
       return;
     }
 
+    setIsLoading(true);
     try {
       await login(email, password);
-      Alert.alert('Sucesso', 'Login realizado com sucesso!');
       onLoginSuccess?.();
     } catch (error: any) {
-      const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Falha ao entrar. Verifique suas credenciais.';
-      Alert.alert('Erro no login', message);
+      // Erro já tratado no AuthContext
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,23 +52,32 @@ const Welcome: React.FC<WelcomeProps> = ({ onLoginSuccess }) => {
       return;
     }
 
+    if (password.length < 6) {
+      Alert.alert('Atenção', 'A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    setIsLoading(true);
     try {
       await register(name, email, password);
-      Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
-      setIsRegistering(false);
-      setEmail(email);
-      setPassword('');
+      onLoginSuccess?.();
     } catch (error: any) {
-      const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Não foi possível cadastrar. Tente novamente.';
-      Alert.alert('Erro no cadastro', message);
+      // Erro já tratado no AuthContext
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    Alert.alert('Login Google', 'Login com Google ainda não implementado.');
+    setIsLoading(true);
+    try {
+      await googleLogin();
+      onLoginSuccess?.();
+    } catch (error: any) {
+      // Erro já tratado no AuthContext
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -85,6 +94,7 @@ const Welcome: React.FC<WelcomeProps> = ({ onLoginSuccess }) => {
             setEmail={setEmail}
             setPassword={setPassword}
             onRegister={handleRegister}
+            isLoading={isLoading}
           />
         ) : (
           <LoginForm
@@ -93,12 +103,13 @@ const Welcome: React.FC<WelcomeProps> = ({ onLoginSuccess }) => {
             setEmail={setEmail}
             setPassword={setPassword}
             onLogin={handleLogin}
+            isLoading={isLoading}
           />
         )}
 
         <Divider />
 
-        {!isRegistering && <GoogleLoginButton onPress={handleGoogleLogin} />}
+        {!isRegistering && <GoogleLoginButton onPress={handleGoogleLogin} isLoading={isLoading} />}
 
         <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)}>
           <Text style={styles.signupText}>
@@ -128,6 +139,7 @@ interface LoginFormProps {
   setEmail: (text: string) => void;
   setPassword: (text: string) => void;
   onLogin: () => void;
+  isLoading: boolean;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
@@ -136,6 +148,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   setEmail,
   setPassword,
   onLogin,
+  isLoading,
 }) => (
   <View style={styles.form}>
     <Text style={styles.cardTitle}>Acessar Conta</Text>
@@ -156,8 +169,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
       secureTextEntry
     />
 
-    <TouchableOpacity style={styles.loginButton} onPress={onLogin}>
-      <Text style={styles.loginButtonText}>Entrar</Text>
+    <TouchableOpacity 
+      style={[styles.loginButton, isLoading && styles.buttonDisabled]} 
+      onPress={onLogin}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <ActivityIndicator color="white" />
+      ) : (
+        <Text style={styles.loginButtonText}>Entrar</Text>
+      )}
     </TouchableOpacity>
   </View>
 );
@@ -171,6 +192,7 @@ interface RegisterFormProps {
   setEmail: (text: string) => void;
   setPassword: (text: string) => void;
   onRegister: () => void;
+  isLoading: boolean;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({
@@ -181,6 +203,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   setEmail,
   setPassword,
   onRegister,
+  isLoading,
 }) => (
   <View style={styles.form}>
     <Text style={styles.cardTitle}>Criar Conta</Text>
@@ -208,8 +231,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       secureTextEntry
     />
 
-    <TouchableOpacity style={styles.loginButton} onPress={onRegister}>
-      <Text style={styles.loginButtonText}>Cadastrar</Text>
+    <TouchableOpacity 
+      style={[styles.loginButton, isLoading && styles.buttonDisabled]} 
+      onPress={onRegister}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <ActivityIndicator color="white" />
+      ) : (
+        <Text style={styles.loginButtonText}>Cadastrar</Text>
+      )}
     </TouchableOpacity>
   </View>
 );
@@ -251,12 +282,23 @@ const Divider: React.FC = () => <Text style={styles.orText}>OU</Text>;
 
 interface GoogleLoginButtonProps {
   onPress: () => void;
+  isLoading?: boolean;
 }
 
-const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onPress }) => (
-  <TouchableOpacity style={styles.googleButton} onPress={onPress}>
-    <FontAwesomeIcon name="google" size={22} color="#C44535" style={{ marginRight: 10 }} />
-    <Text style={styles.googleButtonText}>Entrar com Google</Text>
+const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onPress, isLoading = false }) => (
+  <TouchableOpacity 
+    style={[styles.googleButton, isLoading && styles.buttonDisabled]} 
+    onPress={onPress}
+    disabled={isLoading}
+  >
+    {isLoading ? (
+      <ActivityIndicator color="#C44535" />
+    ) : (
+      <>
+        <FontAwesomeIcon name="google" size={22} color="#C44535" style={{ marginRight: 10 }} />
+        <Text style={styles.googleButtonText}>Entrar com Google</Text>
+      </>
+    )}
   </TouchableOpacity>
 );
 
@@ -305,6 +347,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   loginButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
   signupText: {
     color: '#8A2BE2',
     fontSize: 14,

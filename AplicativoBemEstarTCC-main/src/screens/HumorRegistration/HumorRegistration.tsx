@@ -7,11 +7,15 @@ import {
   TextInput,
   ScrollView,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MoodType, CreateMoodEntryRequest } from '../../types/mood';
+import moodService from '../../services/moodService';
 
-// Definição dos estados de humor
-const moods = [
+// Definição padrão dos estados de humor (fallback se API falhar)
+const defaultMoods: MoodType[] = [
   { level: 1, name: 'Triste', icon: 'emoticon-sad-outline', color: '#E74C3C' },
   { level: 2, name: 'Ansioso', icon: 'emoticon-confused-outline', color: '#F39C12' },
   { level: 3, name: 'Neutro', icon: 'emoticon-neutral-outline', color: '#F1C40F' },
@@ -47,15 +51,51 @@ interface HumorRegistrationProps {
 const HumorRegistration: React.FC<HumorRegistrationProps> = ({ onSave }) => {
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [note, setNote] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    if (selectedMood !== null) {
-      console.log('Humor registrado:', { selectedMood, note });
-      onSave();
-    } else {
-      alert('Por favor, selecione um humor antes de salvar!');
+  // Usar os tipos de humor padrão
+  const moods = defaultMoods;
+
+  const handleSave = async () => {
+    if (selectedMood === null) {
+      Alert.alert('Atenção', 'Por favor, selecione um humor antes de salvar!');
+      return;
+    }
+
+    const selectedMoodData = moods.find((m: MoodType) => m.level === selectedMood);
+    if (!selectedMoodData) {
+      Alert.alert('Erro', 'Humor selecionado é inválido');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const moodEntry: CreateMoodEntryRequest = {
+        moodType: selectedMoodData.name,
+        level: selectedMood,
+        shortDescription: note.trim() || undefined,
+      };
+
+      await moodService.createMoodEntry(moodEntry);
+      
+      // Limpar formulário
+      setSelectedMood(null);
+      setNote('');
+      
+      Alert.alert(
+        'Sucesso!', 
+        'Seu registro de humor foi salvo com sucesso.',
+        [{ text: 'OK', onPress: onSave }]
+      );
+    } catch (error: any) {
+      console.error('Erro ao salvar humor:', error);
+      Alert.alert('Erro', error.message || 'Não foi possível salvar o registro');
+    } finally {
+      setLoading(false);
     }
   };
+
+
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -69,7 +109,7 @@ const HumorRegistration: React.FC<HumorRegistrationProps> = ({ onSave }) => {
 
       {/* Emojis de humor */}
       <View style={styles.moodGrid}>
-        {moods.map((mood) => (
+        {moods.map((mood: MoodType) => (
           <MoodButton
             key={mood.level}
             mood={mood}
@@ -86,11 +126,11 @@ const HumorRegistration: React.FC<HumorRegistrationProps> = ({ onSave }) => {
             Hoje você se sente:{' '}
             <Text
               style={{
-                color: moods.find((m) => m.level === selectedMood)?.color,
+                color: moods.find((m: MoodType) => m.level === selectedMood)?.color,
                 fontWeight: 'bold',
               }}
             >
-              {moods.find((m) => m.level === selectedMood)?.name}
+              {moods.find((m: MoodType) => m.level === selectedMood)?.name}
             </Text>
           </Text>
         </View>
@@ -112,11 +152,18 @@ const HumorRegistration: React.FC<HumorRegistrationProps> = ({ onSave }) => {
 
       {/* Botão salvar */}
       <TouchableOpacity
-        style={[styles.saveButton, selectedMood === null && styles.saveButtonDisabled]}
+        style={[
+          styles.saveButton, 
+          (selectedMood === null || loading) && styles.saveButtonDisabled
+        ]}
         onPress={handleSave}
-        disabled={selectedMood === null}
+        disabled={selectedMood === null || loading}
       >
-        <Text style={styles.saveButtonText}>Salvar Registro</Text>
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.saveButtonText}>Salvar Registro</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
@@ -125,6 +172,18 @@ const HumorRegistration: React.FC<HumorRegistrationProps> = ({ onSave }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFA' },
   contentContainer: { padding: 20, paddingBottom: 50 },
+  
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FAFAFA',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
 
   header: {
     marginBottom: 25,
@@ -211,7 +270,3 @@ const styles = StyleSheet.create({
 });
 
 export default HumorRegistration;
-
-function alert(arg0: string) {
-  throw new Error('Function not implemented.');
-}

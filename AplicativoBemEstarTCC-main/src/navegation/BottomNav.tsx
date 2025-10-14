@@ -1,5 +1,5 @@
 // BottomNav.tsx
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Dashboard from '../screens/Home/Dashboard';
 import HumorRegistration from '../screens/HumorRegistration/HumorRegistration';
@@ -7,6 +7,7 @@ import HabitTrackerScreen from '../screens/HabitTracker/HabitTrackerScreen';
 import SelfCareScreen from '../screens/SelfCare/SelfCareScreen';
 import MeditationScreen from '../screens/Meditation/MeditationScreen';
 import { Home, Smile, TrendingUp, Heart, Brain, MessageCircle } from 'lucide-react-native';
+import { AuthContext } from '../contexts/AuthContext';
 
 export type MainScreenState = 'dashboard' | 'mood' | 'habit' | 'care' | 'meditation';
 
@@ -24,8 +25,13 @@ interface BottomNavProps {
 
 const BottomNav: React.FC<BottomNavProps> = ({ setNavigationState }) => {
   const [currentTab, setCurrentTab] = useState<MainScreenState>('dashboard');
+  const { logout } = useContext(AuthContext);
 
-  const handleLogout = () => setNavigationState('welcome');
+  const handleLogout = async () => {
+    await logout();
+    setNavigationState('welcome');
+  };
+  
   const handleMoodSave = () => setCurrentTab('dashboard');
 
   const renderScreen = () => {

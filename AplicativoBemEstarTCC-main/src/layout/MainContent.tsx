@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import Dashboard from '../screens/Home/Dashboard';
 import HumorRegistration from '../screens/HumorRegistration/HumorRegistration';
 import { MainScreenState } from '../navegation/BottomNav';
 import Icon from 'react-native-vector-icons/Feather';
+import { AuthContext } from '../contexts/AuthContext';
 
 const MainContent: React.FC = () => {
   // Estado da tela ativa
   const [activeScreen, setActiveScreen] = useState<MainScreenState>('dashboard');
+  const { logout } = useContext(AuthContext);
 
   // Função de navegação compatível
   const handleNavigate = (screen: MainScreenState) => {
     setActiveScreen(screen);
   };
 
-  const handleLogout = () => {
-    console.log('Usuário saiu');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      console.log('Usuário deslogado com sucesso');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   };
   
   // Renderiza a tela conforme a ativa

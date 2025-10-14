@@ -1,9 +1,10 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { SafeAreaView, StyleSheet, View, ActivityIndicator, Text } from 'react-native';
-import Welcome from '../screens/Welcome/Welcome';
 import BottomNav from '../navegation/BottomNav';
 import VRScreen from '../screens/VR/VRScreen';
 import { AuthProvider, AuthContext } from '../contexts/AuthContext';
+import Welcome from '../screens/Welcome/Welcome';
+import { configureGoogleSignIn } from '../config/googleConfig';
 
 // Define os estados possíveis de navegação
 export type AppNavigationState = 'welcome' | 'main' | 'vr';
@@ -12,12 +13,24 @@ const AppContent = () => {
   const { user, loading } = useContext(AuthContext);
   const [navigationState, setNavigationState] = React.useState<AppNavigationState>('welcome');
 
+  // Configurar Google SignIn na inicialização
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
+
+  // Automaticamente ir para 'main' se o usuário está autenticado
+  useEffect(() => {
+    if (user && !loading && navigationState === 'welcome') {
+      setNavigationState('main');
+    }
+  }, [user, loading, navigationState]);
+
   // Tela de carregamento enquanto o AuthContext inicializa
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4F46E5" />
-        <Text style={styles.loadingText}>Carregando autenticação...</Text>
+        <Text style={styles.loadingText}>Carregando...</Text>
       </View>
     );
   }
@@ -36,10 +49,12 @@ const AppContent = () => {
     return <VRScreen setNavigationState={setNavigationState} />;
   }
 
-  return null;
+  // Se chegou aqui, há um usuário mas navigationState não é 'main' nem 'vr'
+  // Renderizar BottomNav como fallback
+  return <BottomNav setNavigationState={setNavigationState} />;
 };
 
-// Envolve toda a aplicação com o AuthProvider
+// Envolve toda a aplicação com os Providers
 const App = () => (
   <AuthProvider>
     <SafeAreaView style={styles.safeArea}>

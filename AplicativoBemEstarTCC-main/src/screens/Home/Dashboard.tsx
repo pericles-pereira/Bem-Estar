@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon from 'react-native-vector-icons/Feather';
 import { MainScreenState } from '../../navegation/BottomNav';
+import { AuthContext } from '../../contexts/AuthContext';
+import WeeklyStatsCard from '../../components/WeeklyStatsCard';
 
 interface DashboardProps {
   navigateTo: (screen: MainScreenState) => void;
@@ -31,7 +33,11 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, subtitle, icon
 );
 
 const Dashboard: React.FC<DashboardProps> = ({ navigateTo, handleLogout }) => {
-  const userName = 'Mateus';
+  const { user } = useContext(AuthContext);
+  
+  // Extrai o primeiro nome do usuário
+  const userName = user?.name?.split(' ')[0] || 'Usuário';
+  
   const hour = new Date().getHours();
   let greeting = 'Boa noite';
   if (hour < 12) greeting = 'Bom dia';
@@ -90,13 +96,7 @@ const Dashboard: React.FC<DashboardProps> = ({ navigateTo, handleLogout }) => {
         </View>
 
         {/* Estatísticas */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>Seu Resumo Semanal</Text>
-          <View style={styles.statsBox}>
-            <Text style={styles.statsText}>Estatísticas de humor e hábitos aparecerão aqui.</Text>
-            <Text style={styles.statsHint}>Registre mais dados para ver o seu progresso!</Text>
-          </View>
-        </View>
+        <WeeklyStatsCard />
 
         {/* Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
