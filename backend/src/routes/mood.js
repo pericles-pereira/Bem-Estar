@@ -7,6 +7,9 @@ const { validateMood } = require('../middleware/validation');
 // Aplicar autenticação a todas as rotas
 router.use(authenticateToken);
 
+// GET /api/mood/stats - Buscar estatísticas de humor (DEVE vir antes das rotas com parâmetros)
+router.get('/stats', moodController.getMoodStats);
+
 // GET /api/mood - Buscar entradas de humor do usuário
 router.get('/', moodController.getMoodEntries);
 
@@ -18,8 +21,5 @@ router.put('/:id', validateMood, moodController.updateMoodEntry);
 
 // DELETE /api/mood/:id - Deletar entrada de humor
 router.delete('/:id', moodController.deleteMoodEntry);
-
-// GET /api/mood/stats - Buscar estatísticas de humor
-router.get('/stats', moodController.getMoodStats);
 
 module.exports = router;

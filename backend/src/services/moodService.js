@@ -57,6 +57,8 @@ class MoodService {
     try {
       const { startDate, endDate, limit = 30 } = options;
       
+      console.log('getUserMoodEntries called with:', { userId, options });
+      
       // Query simples apenas por userId (sem índice composto necessário)
       let query = this.db.collection(this.collection)
         .where('userId', '==', userId);
@@ -96,7 +98,13 @@ class MoodService {
       entries.sort((a, b) => new Date(b.registrationDate) - new Date(a.registrationDate));
 
       // Aplicar limite após ordenação
-      return entries.slice(0, parseInt(limit));
+      if (limit && limit > 0) {
+        entries = entries.slice(0, parseInt(limit));
+      }
+
+      console.log(`Returning ${entries.length} entries (limit: ${limit})`);
+      
+      return entries;
     } catch (error) {
       console.error('Error fetching mood entries:', error);
       console.error('Error details:', error.message);
@@ -191,20 +199,16 @@ class MoodService {
     try {
       const { startDate, endDate } = options;
       
+      console.log('getMoodStats called with:', { userId, startDate, endDate });
+      
+      // Query simples apenas por userId para evitar erro de índice
       let query = this.db.collection(this.collection)
         .where('userId', '==', userId);
-
-      if (startDate) {
-        query = query.where('registrationDate', '>=', startDate);
-      }
-
-      if (endDate) {
-        query = query.where('registrationDate', '<=', endDate);
-      }
 
       const snapshot = await query.get();
       
       if (snapshot.empty) {
+        console.log('No mood entries found for user:', userId);
         return {
           totalEntries: 0,
           averageMood: 0,
@@ -214,19 +218,54 @@ class MoodService {
         };
       }
 
-      const entries = [];
+      let entries = [];
       snapshot.forEach(doc => {
-        entries.push(doc.data());
+        const data = doc.data();
+        entries.push({
+          id: doc.id,
+          ...data
+        });
       });
+
+      console.log(`Found ${entries.length} total entries for user ${userId}`);
+
+      // Filtrar por data em JavaScript se necessário
+      if (startDate) {
+        const startDateObj = new Date(startDate);
+        entries = entries.filter(entry => {
+          const entryDate = new Date(entry.registrationDate);
+          return entryDate >= startDateObj;
+        });
+        console.log(`After startDate filter: ${entries.length} entries`);
+      }
+
+      if (endDate) {
+        const endDateObj = new Date(endDate);
+        entries = entries.filter(entry => {
+          const entryDate = new Date(entry.registrationDate);
+          return entryDate <= endDateObj;
+        });
+        console.log(`After endDate filter: ${entries.length} entries`);
+      }
+
+      if (entries.length === 0) {
+        return {
+          totalEntries: 0,
+          averageMood: 0,
+          moodDistribution: {},
+          lastEntry: null,
+          trend: 'stable'
+        };
+      }
 
       const totalEntries = entries.length;
       const moodLevels = entries.map(entry => entry.level);
       const averageMood = moodLevels.reduce((sum, level) => sum + level, 0) / totalEntries;
 
-      // Mood type distribution
+      // Mood type distribution corrigida
       const moodDistribution = {};
       MOOD_TYPES.forEach(mood => {
-        moodDistribution[mood.name] = entries.filter(entry => entry.level === mood.level).length;
+        moodDistribution[mood.name] = entries.filter(entry => entry.moodType === mood.name).length;
       });
 
       // Last entry
@@ -235,6 +274,14 @@ class MoodService {
 
       // Trend (last 7 days vs previous 7 days)
       const trend = this.calculateMoodTrend(entries);
+
+      console.log('Returning stats:', {
+        totalEntries,
+        averageMood: Math.round(averageMood * 100) / 100,
+        moodDistribution,
+        lastEntry: lastEntry ? 'present' : 'null',
+        trend
+      });
 
       return {
         totalEntries,
@@ -245,7 +292,9 @@ class MoodService {
       };
     } catch (error) {
       console.error('Error fetching mood statistics:', error);
-      throw createError(500, 'Internal server error', 'INTERNAL_ERROR');
+      console.error('Error details:', error.message);
+      console.error('Stack trace:', error.stack);
+      throw createError(500, 'Erro interno do servidor', 'INTERNAL_ERROR');
     }
   }
 
