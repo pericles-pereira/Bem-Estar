@@ -4,11 +4,6 @@ import api from '../services/api';
 import { Alert } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
-// Tipagem global para forceLogout
-declare global {
-  var forceLogout: (() => void) | undefined;
-}
-
 interface User {
   id: string;
   name: string;
@@ -39,20 +34,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     initializeGoogleSignin();
     loadUser();
-    // Registrar função global para forçar logout
-    global.forceLogout = handleForceLogout;
   }, []);
 
   const initializeGoogleSignin = () => {
     GoogleSignin.configure({
-      webClientId: 'YOUR_WEB_CLIENT_ID_HERE', // Será configurado depois
+      webClientId: '98741688423-a76au93esrl3hjeojjikqara6dri4e3v.apps.googleusercontent.com', // Web Client ID do projeto
       offlineAccess: true,
     });
-  };
-
-  const handleForceLogout = async () => {
-    console.log('🔄 Forçando logout devido a token inválido...');
-    await logout();
   };
 
   const loadUser = async () => {
